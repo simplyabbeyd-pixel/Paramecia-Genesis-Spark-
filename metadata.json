@@ -1,0 +1,6 @@
+{
+  "name": "Paramecia: The Spark & Idea Universe",
+  "description": "A living cosmological simulation and interactive observatory of Paramecia—where sparks, notions, and sentience evolve into periodic elements of mass and yearning ideas strive to be recognized across millennia.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
