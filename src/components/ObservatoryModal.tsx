@@ -13,7 +13,8 @@ import {
   Scale, 
   Radio, 
   CheckCircle2,
-  RefreshCw
+  RefreshCw,
+  HardDrive
 } from 'lucide-react';
 import { cosmicAudio } from '../utils/audio';
 
@@ -25,6 +26,7 @@ interface ObservatoryModalProps {
   onDrain: (id: string) => void;
   onBindWish: (id: string) => void;
   onDetonate: (id: string) => void;
+  onExportToDrive?: (idea: Idea) => void;
 }
 
 export const ObservatoryModal: React.FC<ObservatoryModalProps> = ({
@@ -35,6 +37,7 @@ export const ObservatoryModal: React.FC<ObservatoryModalProps> = ({
   onDrain,
   onBindWish,
   onDetonate,
+  onExportToDrive,
 }) => {
   const microscopeCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const [communing, setCommuning] = useState(false);
@@ -426,6 +429,18 @@ export const ObservatoryModal: React.FC<ObservatoryModalProps> = ({
                 <Bomb className="w-3.5 h-3.5 text-red-400" />
                 <span>Overcharge to Supernova Fission (🧨 Burst into Newborn Sparks)</span>
               </button>
+
+              {/* Export to Google Drive */}
+              {onExportToDrive && (
+                <button
+                  id="btn-action-export-drive"
+                  onClick={() => onExportToDrive(idea)}
+                  className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg bg-blue-950/40 hover:bg-blue-900/60 border border-blue-600/50 text-blue-200 text-xs font-mono transition-colors"
+                >
+                  <HardDrive className="w-3.5 h-3.5 text-blue-400" />
+                  <span>Save Sentience Record to Google Drive</span>
+                </button>
+              )}
             </div>
           </div>
         </div>

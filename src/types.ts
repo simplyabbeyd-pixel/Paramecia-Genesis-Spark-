@@ -7,12 +7,18 @@ export interface Spark {
   vx: number;
   vy: number;
   type: SparkType;
-  energy: number; // 0 to 1
+  energy: number; // 0 to 1 (gradually reduced by entropy)
+  initialEnergy?: number;
   life: number;
   maxLife: number;
   size: number;
+  initialSize?: number; // base size when ignited
+  entropyRate?: number; // rate of gradual energy/size reduction
   parentIdeaId?: string;
   driftAngle: number;
+  pulsePhase?: number;
+  pulseSpeed?: number;
+  bornMillennia?: number;
 }
 
 export interface ObservableBeliefMicrobe {

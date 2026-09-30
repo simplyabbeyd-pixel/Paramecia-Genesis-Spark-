@@ -15,7 +15,8 @@ import {
   Play, 
   Pause, 
   FastForward,
-  RotateCcw
+  RotateCcw,
+  HardDrive
 } from 'lucide-react';
 
 interface CosmosToolbarProps {
@@ -34,6 +35,7 @@ interface CosmosToolbarProps {
   onOpenPeriodicTable: () => void;
   onOpenCodex: () => void;
   onOpenSynthesizer: () => void;
+  onOpenDrive?: () => void;
   onResetCosmos: () => void;
 }
 
@@ -53,6 +55,7 @@ export const CosmosToolbar: React.FC<CosmosToolbarProps> = ({
   onOpenPeriodicTable,
   onOpenCodex,
   onOpenSynthesizer,
+  onOpenDrive,
   onResetCosmos,
 }) => {
   const sparkTypes: SparkType[] = ['desire', 'love', 'mercury', 'movement', 'wonder', 'entropy'];
@@ -75,7 +78,7 @@ export const CosmosToolbar: React.FC<CosmosToolbarProps> = ({
               </span>
             </div>
             <p className="text-[11px] text-slate-400 font-mono hidden sm:block">
-              No humans ever existed • Evolution of Sparks & Ideas
+              ✨ Endless Time • Entropy & Natural Replenishment Cycles across Millennia
             </p>
           </div>
         </div>
@@ -89,7 +92,13 @@ export const CosmosToolbar: React.FC<CosmosToolbarProps> = ({
           </div>
           <div className="h-3 w-px bg-slate-800" />
           <div className="flex items-center gap-3 text-slate-300">
-            <span>✨ {sparksCount} Sparks</span>
+            <span 
+              className="flex items-center gap-1 cursor-help"
+              title="Cosmic Entropy reduces spark energy and size over time, triggering natural replenishment condensation in the void"
+            >
+              <span>✨ {sparksCount} Sparks</span>
+              <span className="text-[9px] px-1 py-0.2 rounded bg-indigo-950/70 border border-indigo-700/50 text-indigo-300">Entropy Cycle</span>
+            </span>
             <span>💡 {ideasCount} Ideas</span>
             <span>🎋 {wishesCount} Wishes</span>
           </div>
@@ -97,6 +106,19 @@ export const CosmosToolbar: React.FC<CosmosToolbarProps> = ({
 
         {/* Right Actions: Modals, Sound, Speed */}
         <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Google Drive Vault Button */}
+          {onOpenDrive && (
+            <button
+              id="btn-open-google-drive"
+              onClick={onOpenDrive}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium rounded-lg bg-blue-950/70 hover:bg-blue-900/80 border border-blue-600/60 text-blue-200 transition-colors shadow-sm"
+              title="Google Drive Cosmic Vault & Cloud Archives"
+            >
+              <HardDrive className="w-3.5 h-3.5 text-blue-400" />
+              <span className="hidden sm:inline">Drive Vault</span>
+            </button>
+          )}
+
           {/* Synthesizer Button */}
           <button
             id="btn-open-synthesizer"
@@ -134,14 +156,21 @@ export const CosmosToolbar: React.FC<CosmosToolbarProps> = ({
           <button
             id="btn-toggle-sound"
             onClick={onToggleSound}
-            className={`p-1.5 rounded-lg border transition-colors ${
+            className={`p-1.5 rounded-lg border transition-all flex items-center gap-1.5 text-xs ${
               isMuted 
                 ? 'bg-slate-900 border-slate-800 text-slate-500 hover:text-slate-300' 
-                : 'bg-emerald-950/50 border-emerald-600/50 text-emerald-300 hover:bg-emerald-900/50'
+                : 'bg-emerald-950/70 border-emerald-500/60 text-emerald-300 hover:bg-emerald-900/60 shadow-[0_0_12px_rgba(16,185,129,0.2)]'
             }`}
-            title={isMuted ? "Unmute Void Ambience & Chimes" : "Mute Sound"}
+            title={isMuted ? "Unmute Generative Soundscape (morphs pitch & texture with time speed)" : "Mute Generative Soundscape"}
           >
-            {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+            {isMuted ? (
+              <VolumeX className="w-4 h-4" />
+            ) : (
+              <>
+                <Volume2 className="w-4 h-4 animate-pulse text-emerald-400" />
+                <span className="hidden lg:inline text-[10px] font-mono text-emerald-300/90">Soundscape</span>
+              </>
+            )}
           </button>
 
           {/* Reset Void */}
@@ -272,9 +301,40 @@ export const CosmosToolbar: React.FC<CosmosToolbarProps> = ({
             className={`p-1 rounded text-xs ${
               millenniaSpeed === 0 ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-200'
             }`}
-            title="Pause Cosmic Millennia"
+            title="Pause Cosmic Millennia (Stillness & Deep Low Frequency Drone)"
           >
             <Pause className="w-3.5 h-3.5" />
+          </button>
+          <button
+            id="speed-0-05x"
+            onClick={() => onSetSpeed(0.05)}
+            className={`px-1.5 py-0.5 rounded text-[11px] font-mono ${
+              millenniaSpeed === 0.05 ? 'bg-indigo-600/50 text-indigo-200 border border-indigo-500/50' : 'text-slate-400 hover:text-slate-200'
+            }`}
+            title="Eternal Void (0.05x Slowest Time • Cavernous Deep Bass)"
+          >
+            0.05x
+          </button>
+          <button
+            id="speed-0-1x"
+            onClick={() => onSetSpeed(0.1)}
+            className={`px-2 py-0.5 rounded text-[11px] font-mono flex items-center gap-1 ${
+              millenniaSpeed === 0.1 ? 'bg-indigo-600/60 text-indigo-100 border border-indigo-400/60 shadow-sm' : 'text-slate-400 hover:text-slate-200'
+            }`}
+            title="Endless Time (0.1x Millennia Drift • Solemn Contemplative Soundscape)"
+          >
+            <Sparkles className="w-2.5 h-2.5 text-amber-300" />
+            <span>0.1x (Endless)</span>
+          </button>
+          <button
+            id="speed-0-5x"
+            onClick={() => onSetSpeed(0.5)}
+            className={`px-1.5 py-0.5 rounded text-[11px] font-mono ${
+              millenniaSpeed === 0.5 ? 'bg-indigo-600/50 text-indigo-200 border border-indigo-500/50' : 'text-slate-400 hover:text-slate-200'
+            }`}
+            title="Serene Drift (0.5x • Resonant Cosmic Harmonic Chords)"
+          >
+            0.5x
           </button>
           <button
             id="speed-1x"
@@ -282,27 +342,17 @@ export const CosmosToolbar: React.FC<CosmosToolbarProps> = ({
             className={`px-1.5 py-0.5 rounded text-[11px] font-mono ${
               millenniaSpeed === 1 ? 'bg-indigo-600/50 text-indigo-200 border border-indigo-500/50' : 'text-slate-400 hover:text-slate-200'
             }`}
-            title="Normal Millennia Pace"
+            title="Epoch Flow (1x • Harmonic Forward Motion & Lighter Ether)"
           >
             1x
           </button>
           <button
-            id="speed-10x"
-            onClick={() => onSetSpeed(10)}
-            className={`px-1.5 py-0.5 rounded text-[11px] font-mono ${
-              millenniaSpeed === 10 ? 'bg-indigo-600/50 text-indigo-200 border border-indigo-500/50' : 'text-slate-400 hover:text-slate-200'
+            id="speed-5x"
+            onClick={() => onSetSpeed(5)}
+            className={`p-1 rounded text-xs ${
+              millenniaSpeed === 5 ? 'bg-amber-600/50 text-amber-200 border border-amber-500/50' : 'text-slate-400 hover:text-slate-200'
             }`}
-            title="Accelerate 10x"
-          >
-            10x
-          </button>
-          <button
-            id="speed-50x"
-            onClick={() => onSetSpeed(50)}
-            className={`px-1.5 py-0.5 rounded text-[11px] font-mono ${
-              millenniaSpeed === 50 ? 'bg-amber-600/50 text-amber-200 border border-amber-500/50' : 'text-slate-400 hover:text-slate-200'
-            }`}
-            title="Accelerate 50x (Eons pass in seconds)"
+            title="Accelerate Cosmic Flow (5x • High Pitch Radiant Shimmer & Air)"
           >
             <FastForward className="w-3.5 h-3.5" />
           </button>

@@ -84,6 +84,22 @@ export const CosmosCanvas: React.FC<CosmosCanvasProps> = ({
     return () => resizeObserver.disconnect();
   }, []);
 
+  // Generate static distant cosmic background stars for eternal depth
+  const distantStarsRef = useRef<Array<{ rx: number; ry: number; size: number; phase: number; speed: number }>>([]);
+  if (distantStarsRef.current.length === 0) {
+    const stars = [];
+    for (let i = 0; i < 75; i++) {
+      stars.push({
+        rx: Math.random(),
+        ry: Math.random(),
+        size: 0.6 + Math.random() * 0.9,
+        phase: Math.random() * Math.PI * 2,
+        speed: 0.5 + Math.random() * 1.5,
+      });
+    }
+    distantStarsRef.current = stars;
+  }
+
   // Main Rendering Loop
   useEffect(() => {
     let animFrame: number;
@@ -93,7 +109,7 @@ export const CosmosCanvas: React.FC<CosmosCanvasProps> = ({
     const render = (now: number) => {
       const dt = Math.min((now - lastTime) / 1000, 0.1);
       lastTime = now;
-      nebulaTime += dt * 0.2;
+      nebulaTime += dt * 0.08;
 
       const canvas = canvasRef.current;
       if (!canvas) {
@@ -115,28 +131,37 @@ export const CosmosCanvas: React.FC<CosmosCanvasProps> = ({
       ctx.scale(dpr, dpr);
 
       // 1. Draw Primordial Void Background
-      ctx.fillStyle = '#050711';
+      ctx.fillStyle = '#04060e';
       ctx.fillRect(0, 0, width, height);
 
-      // Subtle celestial nebula drifts
+      // Very slow, serene celestial nebula drifts
       const grad = ctx.createRadialGradient(
-        width * 0.5 + Math.sin(nebulaTime * 0.7) * 80,
-        height * 0.5 + Math.cos(nebulaTime * 0.5) * 60,
-        50,
+        width * 0.5 + Math.sin(nebulaTime * 0.3) * 70,
+        height * 0.5 + Math.cos(nebulaTime * 0.2) * 50,
+        40,
         width * 0.5,
         height * 0.5,
-        width * 0.75
+        width * 0.8
       );
-      grad.addColorStop(0, 'rgba(30, 27, 75, 0.28)');
-      grad.addColorStop(0.5, 'rgba(15, 23, 42, 0.18)');
-      grad.addColorStop(1, 'rgba(5, 7, 17, 0)');
+      grad.addColorStop(0, 'rgba(26, 21, 65, 0.24)');
+      grad.addColorStop(0.5, 'rgba(12, 19, 36, 0.15)');
+      grad.addColorStop(1, 'rgba(4, 6, 14, 0)');
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, width, height);
 
+      // Distant micro-stars suspended in deep time
+      distantStarsRef.current.forEach((star) => {
+        const starAlpha = 0.15 + Math.sin(now * 0.0004 * star.speed + star.phase) * 0.12;
+        ctx.fillStyle = `rgba(226, 232, 240, ${Math.max(0.04, starAlpha)})`;
+        ctx.beginPath();
+        ctx.arc(star.rx * width, star.ry * height, star.size, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
       // Subtle cosmic coordinates grid
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.025)';
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.018)';
       ctx.lineWidth = 1;
-      const gridSize = 80;
+      const gridSize = 90;
       for (let x = 0; x < width; x += gridSize) {
         ctx.beginPath();
         ctx.moveTo(x, 0);
@@ -152,8 +177,8 @@ export const CosmosCanvas: React.FC<CosmosCanvasProps> = ({
 
       const { sparks: currentSparks, ideas: currentIdeas, wishes: currentWishes, selectedIdeaId: activeSelId } = stateRef.current;
 
-      // 2. Render Filament Attractions between close sparks
-      ctx.lineWidth = 0.75;
+      // 2. Render Filament Attractions between close sparks with slow breathing
+      ctx.lineWidth = 0.7;
       for (let i = 0; i < currentSparks.length; i++) {
         const s1 = currentSparks[i];
         for (let j = i + 1; j < currentSparks.length && j < i + 12; j++) {
@@ -161,8 +186,8 @@ export const CosmosCanvas: React.FC<CosmosCanvasProps> = ({
           const dx = s2.x - s1.x;
           const dy = s2.y - s1.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 65) {
-            const alpha = (1 - dist / 65) * 0.35 * (s1.energy + s2.energy) * 0.5;
+          if (dist < 80) {
+            const alpha = (1 - dist / 80) * 0.25 * (s1.energy + s2.energy) * 0.5;
             ctx.strokeStyle = s1.type === s2.type ? SPARK_COLORS[s1.type].glow : `rgba(226, 232, 240, ${alpha})`;
             ctx.beginPath();
             ctx.moveTo(s1.x, s1.y);
@@ -172,28 +197,69 @@ export const CosmosCanvas: React.FC<CosmosCanvasProps> = ({
         }
       }
 
-      // 3. Render Sparks
+      // 3. Render Sparks with Entropy Visuals, Gentle Phosphorescent Trails, and Breathing Halos
       currentSparks.forEach((s) => {
         const col = SPARK_COLORS[s.type] || SPARK_COLORS.desire;
-        const radius = s.size * (0.8 + s.energy * 0.4);
+        const sparkBreathe = 1 + Math.sin(now * 0.0008 + (s.driftAngle || 0)) * 0.22;
+        const energyRatio = Math.max(0.05, Math.min(1, s.energy));
+        const radius = Math.max(0.6, s.size * (0.65 + energyRatio * 0.35));
+        const haloRadius = radius * (2.2 + 2.0 * energyRatio) * sparkBreathe;
 
-        // Glow halo
-        ctx.fillStyle = col.glow;
+        // Faint lingering phosphorescent trail (scales with entropy energy)
+        const trailAlpha = 0.15 + 0.85 * energyRatio;
+        ctx.strokeStyle = col.glow;
+        ctx.lineWidth = Math.max(0.5, 1.2 * energyRatio);
         ctx.beginPath();
-        ctx.arc(s.x, s.y, radius * 3.5, 0, Math.PI * 2);
+        ctx.moveTo(s.x, s.y);
+        const trailLength = 20 + 45 * energyRatio;
+        ctx.lineTo(s.x - s.vx * trailLength, s.y - s.vy * trailLength);
+        ctx.stroke();
+
+        // Soft Radial Glow Halo (dims and shrinks as entropy drains energy)
+        const haloGrad = ctx.createRadialGradient(s.x, s.y, radius * 0.3, s.x, s.y, haloRadius);
+        haloGrad.addColorStop(0, col.primary);
+        haloGrad.addColorStop(0.35, col.glow);
+        haloGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = haloGrad;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, haloRadius, 0, Math.PI * 2);
         ctx.fill();
 
-        // Spark core
+        // Spark Core
         ctx.fillStyle = col.primary;
         ctx.beginPath();
         ctx.arc(s.x, s.y, radius, 0, Math.PI * 2);
         ctx.fill();
 
-        // Bright white center spark
-        ctx.fillStyle = '#ffffff';
+        // Bright white center spark (ancient pinpoint light, softer when decaying)
+        ctx.fillStyle = `rgba(255, 255, 255, ${0.4 + 0.6 * energyRatio})`;
         ctx.beginPath();
-        ctx.arc(s.x, s.y, radius * 0.45, 0, Math.PI * 2);
+        ctx.arc(s.x, s.y, radius * (0.3 + 0.2 * energyRatio), 0, Math.PI * 2);
         ctx.fill();
+
+        // Entropy Effect: When spark energy drops below 0.35, faint dissolution ember particles appear
+        if (energyRatio < 0.35) {
+          const emberPhase = (now * 0.003 + Number(s.id.slice(-3)) || 0) % (Math.PI * 2);
+          const emberY = s.y - (Math.sin(emberPhase) * 6 + 4);
+          const emberX = s.x + Math.cos(emberPhase) * 4;
+          ctx.fillStyle = `rgba(148, 163, 184, ${0.15 + (0.35 - energyRatio) * 0.5})`;
+          ctx.beginPath();
+          ctx.arc(emberX, emberY, 0.65, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Freshly Replenished Spark: subtle radiant newborn sparkle
+        if (energyRatio > 0.88) {
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+          ctx.lineWidth = 0.5;
+          const crossSize = radius + 2.5;
+          ctx.beginPath();
+          ctx.moveTo(s.x - crossSize, s.y);
+          ctx.lineTo(s.x + crossSize, s.y);
+          ctx.moveTo(s.x, s.y - crossSize);
+          ctx.lineTo(s.x, s.y + crossSize);
+          ctx.stroke();
+        }
       });
 
       // 4. Render Wishes (Bamboo Ribbon Streamers 🎋🌬️)
@@ -300,6 +366,30 @@ export const CosmosCanvas: React.FC<CosmosCanvasProps> = ({
         ctx.beginPath();
         ctx.arc(idea.x, idea.y, r * 2.2, 0, Math.PI * 2);
         ctx.fill();
+
+        // High-Frequency Harmonic Sentience Ring (Triggered when Sentience >= 90%)
+        if (idea.sentience >= 90) {
+          ctx.save();
+          const harmonicPhase = (now * 0.002) % (Math.PI * 2);
+          const hr1 = r * 2.3 + Math.sin(harmonicPhase * 3) * 3;
+          const hr2 = r * 2.65 + Math.cos(harmonicPhase * 2) * 4;
+
+          // Celestial high-frequency purple/gold overtone rings
+          ctx.strokeStyle = 'rgba(216, 180, 254, 0.45)';
+          ctx.lineWidth = 1.2;
+          ctx.setLineDash([3, 5]);
+          ctx.beginPath();
+          ctx.arc(idea.x, idea.y, hr1, 0, Math.PI * 2);
+          ctx.stroke();
+
+          ctx.strokeStyle = 'rgba(253, 224, 71, 0.35)';
+          ctx.lineWidth = 0.8;
+          ctx.setLineDash([2, 6]);
+          ctx.beginPath();
+          ctx.arc(idea.x, idea.y, hr2, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
+        }
 
         // Electric Charge Arcs (⚡️)
         if (idea.charge > 1) {
@@ -410,9 +500,9 @@ export const CosmosCanvas: React.FC<CosmosCanvasProps> = ({
 
       ctx.restore();
 
-      // Continuous Millennia time progression
+      // Continuous Millennia time progression - slow and patient eon drift
       if (stateRef.current.millenniaSpeed > 0) {
-        onTickMillennia(dt * stateRef.current.millenniaSpeed * 10);
+        onTickMillennia(dt * stateRef.current.millenniaSpeed * 0.2);
       }
 
       animFrame = requestAnimationFrame(render);

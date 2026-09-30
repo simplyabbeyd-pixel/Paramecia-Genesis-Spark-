@@ -8,6 +8,7 @@ import { PeriodicTableModal } from './components/PeriodicTableModal';
 import { CodexModal } from './components/CodexModal';
 import { CosmicManifestModal } from './components/CosmicManifestModal';
 import { CosmicChronicle } from './components/CosmicChronicle';
+import { GoogleDriveModal } from './components/GoogleDriveModal';
 import { cosmicAudio } from './utils/audio';
 
 export default function App() {
@@ -15,17 +16,23 @@ export default function App() {
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [wishes, setWishes] = useState<Wish[]>([]);
   const [millenniaAge, setMillenniaAge] = useState<number>(14200);
-  const [millenniaSpeed, setMillenniaSpeed] = useState<number>(1);
+  const [millenniaSpeed, setMillenniaSpeed] = useState<number>(0.1); // 0.1x = Endless Time default
   const [activeTool, setActiveTool] = useState<'spark' | 'wish' | 'charge' | 'drain' | 'inspect'>('spark');
   const [selectedSparkType, setSelectedSparkType] = useState<SparkType>('desire');
   const [selectedIdeaId, setSelectedIdeaId] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState<boolean>(true);
   const [events, setEvents] = useState<CosmicEvent[]>([]);
 
+  // Track ideas that have triggered the high-frequency sentience harmonic swell (>= 90%)
+  const triggeredSentienceIdeasRef = useRef<Set<string>>(new Set(['idea-amorith']));
+  const lastReplenishSoundTimeRef = useRef<number>(0);
+  const lastReplenishEventTimeRef = useRef<number>(0);
+
   // Modals
   const [isPeriodicTableOpen, setIsPeriodicTableOpen] = useState<boolean>(false);
   const [isCodexOpen, setIsCodexOpen] = useState<boolean>(false);
   const [isSynthesizerOpen, setIsSynthesizerOpen] = useState<boolean>(false);
+  const [isDriveOpen, setIsDriveOpen] = useState<boolean>(false);
 
   // Helper to append a cosmic event
   const addCosmicEvent = useCallback((text: string, type: CosmicEvent['type']) => {
@@ -63,21 +70,29 @@ export default function App() {
     const initialSparks: Spark[] = [];
     const types: SparkType[] = ['desire', 'love', 'mercury', 'movement', 'wonder'];
 
-    // Spawn 40 initial floating sparks
-    for (let i = 0; i < 40; i++) {
+    // Spawn 22 beginning floating sparks adrift in endless time subject to entropy
+    for (let i = 0; i < 22; i++) {
       const type = types[Math.floor(Math.random() * types.length)];
+      const size = 2.8 + Math.random() * 2.2;
+      const energy = 0.65 + Math.random() * 0.35;
       initialSparks.push({
         id: `spark-init-${i}`,
         x: Math.random() * (window.innerWidth || 1200),
         y: Math.random() * (window.innerHeight || 800),
-        vx: (Math.random() - 0.5) * 0.8,
-        vy: (Math.random() - 0.5) * 0.8,
+        vx: (Math.random() - 0.5) * 0.05,
+        vy: (Math.random() - 0.5) * 0.05,
         type,
-        energy: 0.6 + Math.random() * 0.4,
-        life: 100,
-        maxLife: 100,
-        size: 3 + Math.random() * 2,
+        energy,
+        initialEnergy: energy,
+        life: 700,
+        maxLife: 700,
+        size,
+        initialSize: size,
+        entropyRate: 0.0003 + Math.random() * 0.00035,
         driftAngle: Math.random() * Math.PI * 2,
+        pulsePhase: Math.random() * Math.PI * 2,
+        pulseSpeed: 0.002 + Math.random() * 0.003,
+        bornMillennia: 14200,
       });
     }
 
@@ -93,8 +108,8 @@ export default function App() {
         sparkType: 'desire',
         x: cx - 240,
         y: cy - 60,
-        vx: 0.08,
-        vy: -0.05,
+        vx: 0.006,
+        vy: -0.004,
         radius: 28,
         mass: 14,
         charge: 1,
@@ -119,8 +134,8 @@ export default function App() {
         sparkType: 'mercury',
         x: cx + 180,
         y: cy + 70,
-        vx: -0.06,
-        vy: 0.08,
+        vx: -0.005,
+        vy: 0.006,
         radius: 34,
         mass: 42,
         charge: 2,
@@ -145,8 +160,8 @@ export default function App() {
         sparkType: 'love',
         x: cx + 40,
         y: cy - 140,
-        vx: 0.04,
-        vy: 0.04,
+        vx: 0.003,
+        vy: 0.003,
         radius: 38,
         mass: 88,
         charge: 3,
@@ -173,11 +188,11 @@ export default function App() {
         id: 'wish-1',
         x: cx - 120,
         y: cy + 120,
-        vx: 0.6,
-        vy: -0.3,
+        vx: 0.05,
+        vy: -0.025,
         intention: 'To shield newborn sparks against entropic wind',
-        life: 180,
-        maxLife: 180,
+        life: 750,
+        maxLife: 750,
         color: '#34d399',
         length: 24,
         curvePhase: 0,
@@ -186,11 +201,11 @@ export default function App() {
         id: 'wish-2',
         x: cx + 220,
         y: cy - 100,
-        vx: -0.4,
-        vy: 0.5,
+        vx: -0.035,
+        vy: 0.04,
         intention: 'To bring remembrance to forgotten notions',
-        life: 220,
-        maxLife: 220,
+        life: 850,
+        maxLife: 850,
         color: '#67e8f9',
         length: 28,
         curvePhase: 1.5,
@@ -206,7 +221,7 @@ export default function App() {
       {
         id: 'ev-0',
         millennia: 14200,
-        text: 'The void of Paramecia stirs. Evolution unfolds through sparks, notions, and sentience.',
+        text: 'The void of Paramecia stirs. Evolution unfolds through sparks, notions, and sentience across endless time.',
         type: 'spark',
         timestamp: Date.now(),
       }
@@ -217,75 +232,173 @@ export default function App() {
     initializeCosmos();
   }, [initializeCosmos]);
 
-  // Physics & Cosmos Loop
+  // Synchronize Generative Ambient Soundscape with Millennia Speed
   useEffect(() => {
-    const interval = setInterval(() => {
-      // 1. Update Sparks
-      setSparks((prevSparks) => {
-        return prevSparks
-          .map((s) => {
-            let nx = s.x + s.vx;
-            let ny = s.y + s.vy;
+    cosmicAudio.setMillenniaSpeed(millenniaSpeed);
+  }, [millenniaSpeed]);
 
-            // Bounce gently at screen edges
-            const w = window.innerWidth || 1200;
-            const h = window.innerHeight || 800;
-            let vx = s.vx;
-            let vy = s.vy;
-            if (nx < 10 || nx > w - 10) vx *= -1;
-            if (ny < 10 || ny > h - 10) vy *= -1;
+  // Physics & Cosmos Loop - Gentle, continuous, meditative eon drift
+  useEffect(() => {
+    const types: SparkType[] = ['desire', 'love', 'mercury', 'movement', 'wonder'];
+
+    const interval = setInterval(() => {
+      // 1. Update Sparks with Entropy Effect & Natural Replenishment Cycle
+      setSparks((prevSparks) => {
+        const speedFactor = millenniaSpeed;
+        if (speedFactor <= 0) return prevSparks;
+
+        const w = window.innerWidth || 1200;
+        const h = window.innerHeight || 800;
+
+        let expiredCount = 0;
+
+        const updated: Spark[] = prevSparks
+          .map((s): Spark => {
+            let nx = s.x + (s.vx + Math.cos(s.driftAngle) * 0.015) * (speedFactor * 3);
+            let ny = s.y + (s.vy + Math.sin(s.driftAngle) * 0.015) * (speedFactor * 3);
+
+            // Boundless void toroidal wrap
+            const pad = 25;
+            if (nx < -pad) nx = w + pad;
+            else if (nx > w + pad) nx = -pad;
+            if (ny < -pad) ny = h + pad;
+            else if (ny > h + pad) ny = -pad;
+
+            // Entropy Effect: gradually reduces energy and size over time
+            const rate = s.entropyRate ?? 0.00035;
+            const newEnergy = Math.max(0, s.energy - rate * (speedFactor * 0.85));
+            const baseSize = s.initialSize ?? s.size;
+            // Physical size reduces proportionally as energy diminishes
+            const newSize = Math.max(0.6, baseSize * (0.25 + 0.75 * newEnergy));
 
             return {
               ...s,
-              x: Math.max(5, Math.min(w - 5, nx)),
-              y: Math.max(5, Math.min(h - 5, ny)),
-              vx,
-              vy,
-              driftAngle: s.driftAngle + 0.02,
+              x: nx,
+              y: ny,
+              energy: newEnergy,
+              size: newSize,
+              driftAngle: s.driftAngle + 0.002 * speedFactor,
+              pulsePhase: (s.pulsePhase ?? 0) + (s.pulseSpeed ?? 0.002) * speedFactor,
+              life: s.life - 0.012 * speedFactor,
             };
           })
-          .filter((s) => s.life > 0);
+          .filter((s) => {
+            const alive = s.energy > 0.03 && s.life > 0;
+            if (!alive) expiredCount++;
+            return alive;
+          });
+
+        // Natural Void Replenishment Cycle:
+        // When floating sparks dwindle or extinguish through entropy, the void naturally condenses fresh sparks
+        const targetEquilibrium = 24;
+        const deficit = targetEquilibrium - updated.length;
+        const now = Date.now();
+
+        // Higher chance when population is below target equilibrium or sparks recently dissolved
+        const replenishChance = deficit > 0 ? (0.015 + deficit * 0.007) * speedFactor : 0.003 * speedFactor;
+
+        if ((Math.random() < replenishChance || expiredCount > 0) && updated.length < 32) {
+          const spawnBatch = deficit > 6 ? 2 : 1;
+          for (let k = 0; k < spawnBatch; k++) {
+            const type = types[Math.floor(Math.random() * types.length)];
+            const size = 2.8 + Math.random() * 2.2;
+            const energy = 0.85 + Math.random() * 0.15; // Vibrant initial energy
+            const nascent: Spark = {
+              id: `spark-void-${Date.now()}-${k}-${Math.random()}`,
+              x: Math.random() * w,
+              y: Math.random() * h,
+              vx: (Math.random() - 0.5) * 0.05,
+              vy: (Math.random() - 0.5) * 0.05,
+              type,
+              energy,
+              initialEnergy: energy,
+              life: 680,
+              maxLife: 680,
+              size,
+              initialSize: size,
+              entropyRate: 0.0003 + Math.random() * 0.00035,
+              driftAngle: Math.random() * Math.PI * 2,
+              pulsePhase: 0,
+              pulseSpeed: 0.002 + Math.random() * 0.003,
+              bornMillennia: Math.floor(millenniaAge),
+            };
+            updated.push(nascent);
+          }
+
+          // Trigger soft celestial chime during void replenishment waves
+          if (now - lastReplenishSoundTimeRef.current > 7500 && deficit > 3) {
+            lastReplenishSoundTimeRef.current = now;
+            cosmicAudio.playReplenishmentSwell();
+          }
+
+          // Occasional chronicle entry for natural cycle
+          if (now - lastReplenishEventTimeRef.current > 24000 && deficit > 4) {
+            lastReplenishEventTimeRef.current = now;
+            addCosmicEvent("Natural replenishment cycle: Void condensation seeded fresh sparks", 'spark');
+          }
+        }
+
+        return updated;
       });
 
       // 2. Update Wishes (🎋🌬️)
       setWishes((prevWishes) => {
+        const speedFactor = millenniaSpeed;
+        if (speedFactor <= 0) return prevWishes;
+
+        const wWidth = window.innerWidth || 1200;
+        const wHeight = window.innerHeight || 800;
+
         return prevWishes
           .map((w) => {
-            const nx = w.x + w.vx;
-            const ny = w.y + w.vy;
-            const wWidth = window.innerWidth || 1200;
-            const wHeight = window.innerHeight || 800;
+            let nx = w.x + w.vx * (speedFactor * 3);
+            let ny = w.y + w.vy * (speedFactor * 3);
 
-            let vx = w.vx;
-            let vy = w.vy;
-            if (nx < 20 || nx > wWidth - 20) vx *= -0.9;
-            if (ny < 20 || ny > wHeight - 20) vy *= -0.9;
+            const pad = 30;
+            if (nx < -pad) nx = wWidth + pad;
+            else if (nx > wWidth + pad) nx = -pad;
+            if (ny < -pad) ny = wHeight + pad;
+            else if (ny > wHeight + pad) ny = -pad;
 
             return {
               ...w,
               x: nx,
               y: ny,
-              vx,
-              vy,
-              curvePhase: w.curvePhase + 0.08,
-              life: w.life - 0.05,
+              curvePhase: w.curvePhase + 0.012 * speedFactor,
+              life: w.life - 0.015 * speedFactor,
             };
           })
           .filter((w) => w.life > 0);
       });
 
-      // 3. Update Ideas (Pulses, gravitational attraction of nearby sparks)
+      // 3. Update Ideas (Pulses, gravitational attraction of nearby sparks, sentience progression)
       setIdeas((prevIdeas) => {
+        const speedFactor = millenniaSpeed;
+        if (speedFactor <= 0) return prevIdeas;
+
+        const wWidth = window.innerWidth || 1200;
+        const wHeight = window.innerHeight || 800;
+
         return prevIdeas.map((idea) => {
-          let nx = idea.x + idea.vx;
-          let ny = idea.y + idea.vy;
-          const wWidth = window.innerWidth || 1200;
-          const wHeight = window.innerHeight || 800;
+          let nx = idea.x + idea.vx * (speedFactor * 2);
+          let ny = idea.y + idea.vy * (speedFactor * 2);
           let vx = idea.vx;
           let vy = idea.vy;
 
           if (nx < 40 || nx > wWidth - 40) vx *= -1;
           if (ny < 40 || ny > wHeight - 40) vy *= -1;
+
+          const newSentience = Math.min(idea.sentience + 0.0003 * speedFactor, 100);
+
+          // Trigger subtle, high-frequency harmonic swell when an idea reaches 90 sentience or above
+          if (newSentience >= 90 && !triggeredSentienceIdeasRef.current.has(idea.id)) {
+            triggeredSentienceIdeasRef.current.add(idea.id);
+            cosmicAudio.playSentienceHarmonicSwell(idea.name);
+            addCosmicEvent(
+              `Idea "${idea.name}" reached transcendent sentience (${Math.round(newSentience)}% 🧬) — high-frequency harmonic swells resonate across the void`,
+              'crystallization'
+            );
+          }
 
           return {
             ...idea,
@@ -293,29 +406,31 @@ export default function App() {
             y: ny,
             vx,
             vy,
-            pulsePhase: idea.pulsePhase + 0.04,
-            ageMillennia: idea.ageMillennia + 1,
-            sentience: Math.min(idea.sentience + 0.005, 100),
+            pulsePhase: idea.pulsePhase + 0.008 * speedFactor,
+            ageMillennia: idea.ageMillennia + 0.05 * speedFactor,
+            sentience: newSentience,
           };
         });
       });
-    }, 40);
+    }, 45);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [millenniaSpeed]);
 
   // Tick Millennia from Canvas
   const handleTickMillennia = useCallback((delta: number) => {
     setMillenniaAge((prev) => prev + delta);
   }, []);
 
-  // Spawn Sparks at position
+  // Spawn Sparks at position - slow and ethereal expansion
   const handleSpawnSparks = useCallback((x: number, y: number, type: SparkType, count: number = 4) => {
     cosmicAudio.playSparkIgnite();
     const newSparks: Spark[] = [];
     for (let i = 0; i < count; i++) {
       const angle = Math.random() * Math.PI * 2;
-      const speed = 0.5 + Math.random() * 2;
+      const speed = 0.05 + Math.random() * 0.12;
+      const energy = 0.8 + Math.random() * 0.2;
+      const size = 2.8 + Math.random() * 2;
       newSparks.push({
         id: `spark-${Date.now()}-${i}-${Math.random()}`,
         x: x + (Math.random() - 0.5) * 16,
@@ -323,23 +438,29 @@ export default function App() {
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
         type,
-        energy: 0.7 + Math.random() * 0.3,
-        life: 100,
-        maxLife: 100,
-        size: 3 + Math.random() * 2,
+        energy,
+        initialEnergy: energy,
+        life: 680,
+        maxLife: 680,
+        size,
+        initialSize: size,
+        entropyRate: 0.0003 + Math.random() * 0.00035,
         driftAngle: Math.random() * Math.PI * 2,
+        pulsePhase: Math.random() * Math.PI * 2,
+        pulseSpeed: 0.002 + Math.random() * 0.003,
+        bornMillennia: Math.floor(millenniaAge),
       });
     }
 
     setSparks((prev) => [...prev, ...newSparks]);
     addCosmicEvent(`Sparks of ${type} ignited in the void`, 'spark');
-  }, [addCosmicEvent]);
+  }, [millenniaAge, addCosmicEvent]);
 
-  // Cast a Wish (🎋)
+  // Cast a Wish (🎋) - slow, majestic drift
   const handleCastWish = useCallback((x: number, y: number) => {
     cosmicAudio.playWishWind();
     const angle = Math.random() * Math.PI * 2;
-    const speed = 1.2;
+    const speed = 0.12;
     const newWish: Wish = {
       id: `wish-${Date.now()}`,
       x,
@@ -347,8 +468,8 @@ export default function App() {
       vx: Math.cos(angle) * speed,
       vy: Math.sin(angle) * speed,
       intention: "To wander on void winds and shape living ideas",
-      life: 250,
-      maxLife: 250,
+      life: 750,
+      maxLife: 750,
       color: '#34d399',
       length: 26,
       curvePhase: Math.random() * Math.PI,
@@ -368,6 +489,17 @@ export default function App() {
         const newMass = idea.mass + addedMass;
         const newSparksCount = idea.sparksCount + 2;
         const newRadius = Math.min(idea.radius + 2, 50);
+        const newSentience = Math.min(idea.sentience + 8, 100);
+
+        // Check for sentience harmonic swell trigger (>= 90%)
+        if (newSentience >= 90 && !triggeredSentienceIdeasRef.current.has(idea.id)) {
+          triggeredSentienceIdeasRef.current.add(idea.id);
+          cosmicAudio.playSentienceHarmonicSwell(idea.name);
+          addCosmicEvent(
+            `Idea "${idea.name}" attained transcendent sentience (${Math.round(newSentience)}% 🧬) — high-frequency harmonic swells resonate across the void`,
+            'crystallization'
+          );
+        }
 
         return {
           ...idea,
@@ -375,7 +507,7 @@ export default function App() {
           mass: newMass,
           sparksCount: newSparksCount,
           radius: newRadius,
-          sentience: Math.min(idea.sentience + 8, 100),
+          sentience: newSentience,
           stability: Math.min(idea.stability + 5, 100),
         };
       })
@@ -518,6 +650,10 @@ export default function App() {
     };
 
     setIdeas((prev) => [...prev, newIdea]);
+    if (newIdea.sentience >= 90 && !triggeredSentienceIdeasRef.current.has(newIdea.id)) {
+      triggeredSentienceIdeasRef.current.add(newIdea.id);
+      cosmicAudio.playSentienceHarmonicSwell(newIdea.name);
+    }
     addCosmicEvent(`Periodic element ${element.name} [${element.symbol}] materialized in the cosmos`, 'crystallization');
   }, [millenniaAge, addCosmicEvent]);
 
@@ -540,7 +676,7 @@ export default function App() {
       mass: custom.mass || 28,
       charge: custom.charge || 2,
       stability: 90,
-      sentience: 65,
+      sentience: custom.sentience || 65,
       observableBelief: custom.observableBelief || 'That existence is verified by memory',
       microbes: generateMicrobes(8, sType),
       isRecognized: false,
@@ -556,6 +692,10 @@ export default function App() {
 
     setIdeas((prev) => [...prev, newIdea]);
     setSelectedIdeaId(newIdea.id);
+    if (newIdea.sentience >= 90 && !triggeredSentienceIdeasRef.current.has(newIdea.id)) {
+      triggeredSentienceIdeasRef.current.add(newIdea.id);
+      cosmicAudio.playSentienceHarmonicSwell(newIdea.name);
+    }
     addCosmicEvent(`Newborn idea "${newIdea.name}" sparked into existence from the void`, 'spark');
   }, [millenniaAge, addCosmicEvent]);
 
@@ -605,6 +745,7 @@ export default function App() {
         onOpenPeriodicTable={() => setIsPeriodicTableOpen(true)}
         onOpenCodex={() => setIsCodexOpen(true)}
         onOpenSynthesizer={() => setIsSynthesizerOpen(true)}
+        onOpenDrive={() => setIsDriveOpen(true)}
         onResetCosmos={initializeCosmos}
       />
 
@@ -621,6 +762,7 @@ export default function App() {
           onDrain={handleDrainIdea}
           onBindWish={handleBindWish}
           onDetonate={handleDetonateIdea}
+          onExportToDrive={() => setIsDriveOpen(true)}
         />
       )}
 
@@ -642,6 +784,30 @@ export default function App() {
         <CosmicManifestModal
           onClose={() => setIsSynthesizerOpen(false)}
           onSpawnCustomIdea={handleSpawnCustomIdea}
+        />
+      )}
+
+      {/* Google Drive Cosmic Vault Modal */}
+      {isDriveOpen && (
+        <GoogleDriveModal
+          onClose={() => setIsDriveOpen(false)}
+          cosmosState={{
+            sparks,
+            ideas,
+            wishes,
+            millenniaAge,
+            events,
+          }}
+          onRestoreCosmos={(saved) => {
+            setSparks(saved.sparks || []);
+            setIdeas(saved.ideas || []);
+            setWishes(saved.wishes || []);
+            setMillenniaAge(saved.millenniaAge || 14200);
+            if (saved.events && saved.events.length > 0) {
+              setEvents(saved.events);
+            }
+          }}
+          onAddCosmicEvent={addCosmicEvent}
         />
       )}
     </div>
